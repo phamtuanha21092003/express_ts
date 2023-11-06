@@ -11,8 +11,59 @@ datasource db {
 }
 
 model Account {
-  id Int @unique @default(autoincrement())
+  id       Int     @unique @default(autoincrement())
+  email    String  @unique
   username String
   password String
-  email String @unique
+  profile  Image[]
+
+  @@id([id, email])
+}
+
+model Image {
+  id         Int      @unique @default(autoincrement())
+  userId     Int
+  timeUpload DateTime @default(now())
+  user       Account  @relation(fields: [userId], references: [id])
+  data       Bytes
+
+  @@id([id, userId])
+}
+
+model User {
+  id      Int      @id @default(autoincrement())
+  name    String
+  posts   Post[]
+  profile Profile?
+}
+
+model Profile {
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id])
+}
+
+model Post {
+  id         Int                 @id @default(autoincrement())
+  author     User                @relation(fields: [authorId], references: [id])
+  authorId   Int
+  categories CategoriesOnPosts[]
+}
+
+model Category {
+  id    Int                 @id @default(autoincrement())
+  name  String
+  posts CategoriesOnPosts[]
+}
+
+model CategoriesOnPosts {
+  post       Post     @relation(fields: [postId], references: [id])
+  postId     Int
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId Int
+  assignedAt DateTime @default(now())
+  assignedBy String // relation scalar field (used in the `@relation` attribute above)
+  // relation scalar field (used in the `@relation` attribute above)
+
+  @@id([postId, categoryId])
 }

@@ -25,7 +25,10 @@ const signIn = [
   body('password')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 chars long'),
-  body('username').exists().withMessage('Username is required'),
 ]
 
-export const validator = { signUp, signIn }
+const verifyRefreshToken = [
+  body('refresh').exists().withMessage('Refresh token is required'),
+]
+
+export const validator = { signUp, signIn, verifyRefreshToken }

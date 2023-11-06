@@ -1,8 +1,8 @@
-import { Request, Response } from 'express'
+import { NextFunction, Request, Response } from 'express'
 import prisma from 'prisma'
 import { matchedData, validationResult } from 'express-validator'
 import { accessTokenKey, refreshTokenKey } from '@configs'
-import jsonwebtoken from 'jsonwebtoken'
+import jsonwebtoken, { JwtPayload } from 'jsonwebtoken'
 
 const signUp = async (req: Request, res: Response) => {
   const errors = validationResult(req)
@@ -38,9 +38,9 @@ const signIn = async (req: Request, res: Response) => {
   })
 
   if (account) {
-    const payloadAccessToken = {}
+    const payloadAccessToken = { id: account.id }
     const accessToken = jsonwebtoken.sign(payloadAccessToken, accessTokenKey, {
-      expiresIn: 15 * 60 * 1000,
+      expiresIn: 30 * 60 * 1000,
     })
 
     const payloadRefreshToken = {}
@@ -52,15 +52,57 @@ const signIn = async (req: Request, res: Response) => {
       }
     )
 
-    return res
-      .status(200)
-      .json({
-        message: 'logged in successfully',
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      })
+    return res.status(200).json({
+      message: 'logged in successfully',
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    })
   }
   res.status(400).json({ message: 'email, password are invalid' })
 }
 
-export const authService = { signUp, signIn }
+const verifyRefreshToken = (req: Request, res: Response) => {
+  const errors = validationResult(req)
+
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: errors.array() })
+  }
+
+  const { refresh: token } = matchedData(req)
+  jsonwebtoken.verify(token, refreshTokenKey, (err, decoded) => {
+    if (err) return res.status(401).json({ message: err })
+  })
+  res.status(200).json({ message: 'token is valid' })
+}
+
+const verifyAccessToken = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.headers['authorization']) {
+    return res.status(401).json({
+      message: 'Unauthorized',
+    })
+  }
+
+  const [, token] = req.headers['authorization'].split(' ')
+
+  jsonwebtoken.verify(token, accessTokenKey, (err, decoded: JwtPayload) => {
+    if (err) return res.status(401).json({ message: err })
+
+    const { id = undefined } = decoded
+
+    if (!id)
+      return res.status(401).json({
+        message: 'Unauthorized',
+      })
+
+    res.locals.id = id
+  })
+
+  next()
+}
+
+export const authService = {
+  signUp,
+  signIn,
+  verifyRefreshToken,
+  verifyAccessToken,
+}
