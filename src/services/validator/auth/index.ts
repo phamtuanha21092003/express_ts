@@ -1,3 +1,4 @@
+import { UserModel } from '@models/User'
 import { body } from 'express-validator'
 import prisma from 'prisma'
 
@@ -6,9 +7,7 @@ const signUp = [
     .isEmail()
     .withMessage('Email is invalid')
     .custom(async (email) => {
-      const isExistAccount = await prisma.account.findFirst({
-        where: { email: email },
-      })
+      const isExistAccount = await UserModel.selectUser({ email: email })
 
       if (isExistAccount) {
         throw new Error('Email is already taken')

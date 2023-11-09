@@ -10,5 +10,10 @@ services:
       - postgres:/var/lib/postgresql/data
     ports:
       - '3306:5432'
+  # express:
+  #   image: nodejs:20.9.0
+  #   command: bash -c "npm install && npm start"
+  #   depends_on:
+  #     - postgres
 volumes:
   postgres:

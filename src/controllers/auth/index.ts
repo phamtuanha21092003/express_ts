@@ -14,29 +14,3 @@ authController.post(
   authService.verifyRefreshToken
 )
 authController.post('/verify_access_token', authService.verifyAccessToken)
-
-// authController.get('/hello', query('username').notEmpty().trim())
-
-// const signUpController = async (req: Request, res: Response) => {
-//   const errors = validationResult(req)
-
-//   if (!errors.isEmpty()) {
-//     return res.status(400).json({ errors: errors.array() })
-//   }
-
-//   const { username, email, password } = req.body
-//   await res.json({ email: email })
-// }
-
-// const helloController = (req: Request, res: Response) => {
-//   const result = validationResult(req)
-
-//   console.log(req.query.username)
-//   if (result.isEmpty()) {
-//     return res.send(`Hello World! ${req.query.username}`)
-//   }
-
-//   res.status(400).json({ error: result.array() })
-// }
-
-// export default { signUpController, helloController }

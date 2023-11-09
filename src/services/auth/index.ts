@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express'
-import prisma from 'prisma'
 import { matchedData, validationResult } from 'express-validator'
 import { accessTokenKey, refreshTokenKey } from '@configs'
 import jsonwebtoken, { JwtPayload } from 'jsonwebtoken'
+import { UserModel } from '@models/User'
 
 const signUp = async (req: Request, res: Response) => {
   const errors = validationResult(req)
@@ -13,8 +13,10 @@ const signUp = async (req: Request, res: Response) => {
 
   const { email, password, username } = matchedData(req)
 
-  const account = await prisma.account.create({
-    data: { email: email, password: password, username: username },
+  const account = await UserModel.create({
+    name: username,
+    email: email,
+    password: password,
   })
 
   if (account) {
@@ -33,8 +35,9 @@ const signIn = async (req: Request, res: Response) => {
 
   const { email, password } = matchedData(req)
 
-  const account = await prisma.account.findFirst({
-    where: { email: email, password: password },
+  const account = await UserModel.selectUser({
+    email: email,
+    password: password,
   })
 
   if (account) {
@@ -43,7 +46,7 @@ const signIn = async (req: Request, res: Response) => {
       expiresIn: 30 * 60 * 1000,
     })
 
-    const payloadRefreshToken = {}
+    const payloadRefreshToken = { id: account.id }
     const refreshToken = jsonwebtoken.sign(
       payloadRefreshToken,
       refreshTokenKey,
@@ -71,8 +74,20 @@ const verifyRefreshToken = (req: Request, res: Response) => {
   const { refresh: token } = matchedData(req)
   jsonwebtoken.verify(token, refreshTokenKey, (err, decoded) => {
     if (err) return res.status(401).json({ message: err })
+    const accessToken = jsonwebtoken.sign({ ...decoded }, accessTokenKey, {
+      expiresIn: 30 * 60 * 1000,
+    })
+
+    const refreshToken = jsonwebtoken.sign({ ...decoded }, refreshTokenKey, {
+      expiresIn: 2 * 30 * 24 * 60 * 60 * 1000,
+    })
+
+    return res.status(200).json({
+      message: 'verify successfully',
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    })
   })
-  res.status(200).json({ message: 'token is valid' })
 }
 
 const verifyAccessToken = (req: Request, res: Response, next: NextFunction) => {
