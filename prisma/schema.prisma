@@ -16,13 +16,14 @@ model User {
   name     String
   password String
   avatar   Avatar?
+  // friend 
 }
 
 model Avatar {
-  user       User   @relation(fields: [userId], references: [id])
-  userId     Int    @unique
-  publish_id String
-  url        String
+  user      User   @relation(fields: [user_id], references: [id])
+  user_id   Int    @unique
+  public_id String
+  url       String
 
-  @@id([userId, publish_id])
+  @@id([user_id, public_id])
 }
