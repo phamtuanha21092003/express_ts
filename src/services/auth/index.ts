@@ -60,6 +60,7 @@ const signIn = async (req: Request, res: Response) => {
         )
 
         return res.status(200).json({
+            user_id: account.id,
             message: 'logged in successfully',
             access_token: accessToken,
             refresh_token: refreshToken,

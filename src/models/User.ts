@@ -16,13 +16,13 @@ const selectUser = (user: { email: string; password?: string }) => {
           })
 }
 
-const selectById = (id: number) => {
+const selectById = (id: string) => {
     return prisma.user.findFirst({ where: { id: id } })
 }
 
 const updateAvatar = (
     avatar: { publicId: string; url: string },
-    id: number
+    id: string
 ) => {
     return prisma.user.update({
         where: { id: id },
@@ -40,7 +40,7 @@ const updateAvatar = (
     })
 }
 
-const getPublicIdAvatar = async (id: number) => {
+const getPublicIdAvatar = async (id: string) => {
     return prisma.user.findFirstOrThrow({
         select: {
             avatar: { select: { public_id: true } },
@@ -49,7 +49,7 @@ const getPublicIdAvatar = async (id: number) => {
     })
 }
 
-const destroyAvatar = (id: number) => {
+const destroyAvatar = (id: string) => {
     return prisma.user.update({
         where: { id: id },
         data: {
