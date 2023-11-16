@@ -1,6 +1,5 @@
 import { UserModel } from '@models/User'
 import { body } from 'express-validator'
-import prisma from 'prisma'
 
 const signUp = [
     body('email')

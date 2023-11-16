@@ -104,18 +104,23 @@ const verifyAccessToken = (req: Request, res: Response, next: NextFunction) => {
 
     const [, token] = req.headers['authorization'].split(' ')
 
-    jsonwebtoken.verify(token, accessTokenKey, (err, decoded: JwtPayload) => {
-        if (err) return res.status(401).json({ message: err.message })
+    jsonwebtoken.verify(
+        token,
+        accessTokenKey,
+        async (err, decoded: JwtPayload) => {
+            if (err) return res.status(403).json({ message: err.message })
 
-        const { id } = decoded
+            const { id } = decoded
+            res.locals.id = id
 
-        if (!id)
-            return res.status(401).json({
-                message: 'Unauthorized',
-            })
+            const user = await UserModel.selectById(id)
 
-        res.locals.id = id
-    })
+            if (!user)
+                return res.status(403).json({
+                    message: 'Unauthorized',
+                })
+        }
+    )
 
     next()
 }

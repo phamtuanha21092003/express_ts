@@ -58,6 +58,40 @@ const destroyAvatar = (id: string) => {
     })
 }
 
+const addFollow = async (idCurrent: string, idTarge: string) => {
+    await prisma.user.update({
+        where: { id: idCurrent },
+        data: { following: { connect: { id: idTarge } } },
+    })
+
+    await prisma.user.update({
+        where: { id: idTarge },
+        data: { followed_by: { connect: { id: idCurrent } } },
+    })
+}
+
+const removeFollow = async (idCurrent: string, idTarge: string) => {
+    await prisma.user.update({
+        where: { id: idCurrent },
+        data: { following: { disconnect: { id: idTarge } } },
+    })
+
+    await prisma.user.update({
+        where: { id: idTarge },
+        data: { followed_by: { disconnect: { id: idCurrent } } },
+    })
+}
+
+const allUser = () => {
+    return prisma.user.findMany({
+        include: {
+            avatar: true,
+            followed_by: { include: { avatar: true } },
+            following: { include: { avatar: true } },
+        },
+    })
+}
+
 export const UserModel = {
     create,
     selectUser,
@@ -65,4 +99,7 @@ export const UserModel = {
     updateAvatar,
     getPublicIdAvatar,
     destroyAvatar,
+    addFollow,
+    removeFollow,
+    allUser,
 }
