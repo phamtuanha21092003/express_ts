@@ -46,7 +46,7 @@ const signIn = async (req: Request, res: Response) => {
             payloadAccessToken,
             accessTokenKey,
             {
-                expiresIn: 30 * 60 * 1000,
+                expiresIn: '3h',
             }
         )
 
@@ -55,7 +55,7 @@ const signIn = async (req: Request, res: Response) => {
             payloadRefreshToken,
             refreshTokenKey,
             {
-                expiresIn: 2 * 30 * 24 * 60 * 60 * 1000,
+                expiresIn: '0.5y',
             }
         )
 
@@ -77,22 +77,41 @@ const verifyRefreshToken = (req: Request, res: Response) => {
     }
 
     const { refresh: token } = matchedData(req)
-    jsonwebtoken.verify(token, refreshTokenKey, (err, decoded) => {
-        if (err) return res.status(401).json({ message: err })
-        const accessToken = jsonwebtoken.sign({ decoded }, accessTokenKey, {
-            expiresIn: 30 * 60 * 1000,
-        })
+    jsonwebtoken.verify(
+        token,
+        refreshTokenKey,
+        async (err, decoded: JwtPayload) => {
+            if (err) return res.status(403).json({ message: err })
 
-        const refreshToken = jsonwebtoken.sign({ decoded }, refreshTokenKey, {
-            expiresIn: 2 * 30 * 24 * 60 * 60 * 1000,
-        })
+            const { id } = decoded
 
-        return res.status(200).json({
-            message: 'verify successfully',
-            access_token: accessToken,
-            refresh_token: refreshToken,
-        })
-    })
+            const user = await UserModel.selectById(id)
+
+            if (!user) {
+                return res.status(403).json({ status: 'token is invalid' })
+            }
+
+            UserModel.updateLastSignIn(id)
+
+            const accessToken = jsonwebtoken.sign({ decoded }, accessTokenKey, {
+                expiresIn: 30 * 60 * 1000,
+            })
+
+            const refreshToken = jsonwebtoken.sign(
+                { decoded },
+                refreshTokenKey,
+                {
+                    expiresIn: 2 * 30 * 24 * 60 * 60 * 1000,
+                }
+            )
+
+            return res.status(200).json({
+                message: 'verify successfully',
+                access_token: accessToken,
+                refresh_token: refreshToken,
+            })
+        }
+    )
 }
 
 const verifyAccessToken = (req: Request, res: Response, next: NextFunction) => {

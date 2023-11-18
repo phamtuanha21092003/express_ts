@@ -35,7 +35,7 @@ const destroyAvatar = async (
 ) => {
     const userId = res.locals.id
 
-    const publicIdContainer = await UserModel.getPublicIdAvatar(userId)
+    const publicIdContainer = await UserModel.selectPublicIdAvatar(userId)
 
     const publicId = publicIdContainer?.avatar?.public_id
 
@@ -45,7 +45,7 @@ const destroyAvatar = async (
     try {
         const { result } = await destroyImage(publicId)
         if (result === 'ok') {
-            const destroy = await UserModel.destroyAvatar(userId)
+            const destroy = await UserModel.deleteAvatar(userId)
 
             return res.status(200).json({ status: destroy })
         }
@@ -98,9 +98,26 @@ const removeFollow = async (
     }
 }
 
+const generalFriend = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const id = res.locals['id']
+
+        const generalFriend = await UserModel.mutualFriendsCount(id)
+
+        res.status(200).json({ general: generalFriend })
+    } catch (err) {
+        next(err)
+    }
+}
+
 export const userService = {
     uploadAvatar,
     destroyAvatar,
     addFollow,
     removeFollow,
+    generalFriend,
 }

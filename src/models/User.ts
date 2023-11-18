@@ -20,6 +20,13 @@ const selectById = (id: string) => {
     return prisma.user.findFirst({ where: { id: id } })
 }
 
+const selectProfile = (id: string) => {
+    return prisma.user.findFirst({
+        where: { id: id },
+        select: { name: true, avatar: { select: { url: true } } },
+    })
+}
+
 const updateAvatar = (
     avatar: { publicId: string; url: string },
     id: string
@@ -40,7 +47,7 @@ const updateAvatar = (
     })
 }
 
-const getPublicIdAvatar = async (id: string) => {
+const selectPublicIdAvatar = async (id: string) => {
     return prisma.user.findFirstOrThrow({
         select: {
             avatar: { select: { public_id: true } },
@@ -49,7 +56,7 @@ const getPublicIdAvatar = async (id: string) => {
     })
 }
 
-const destroyAvatar = (id: string) => {
+const deleteAvatar = (id: string) => {
     return prisma.user.update({
         where: { id: id },
         data: {
@@ -82,7 +89,31 @@ const removeFollow = async (idCurrent: string, idTarge: string) => {
     })
 }
 
-const allUser = () => {
+const selectFollowing = (id: string): any =>
+    prisma.user
+        .findFirst({
+            where: { id: id },
+            select: { following: { select: { id: true } } },
+        })
+        .then((user) => user?.following.map((following) => following.id) || [])
+
+const mutualFriendsCount = async (id: string) => {
+    const following = await selectFollowing(id)
+
+    return await prisma.user.findMany({
+        select: {
+            _count: {
+                select: { following: { where: { id: { in: following } } } },
+            },
+            avatar: { select: { url: true } },
+            name: true,
+            email: true,
+        },
+        where: { AND: [{ id: { notIn: following } }, { id: { not: id } }] },
+    })
+}
+
+const selectAllUser = () => {
     return prisma.user.findMany({
         include: {
             avatar: true,
@@ -92,14 +123,25 @@ const allUser = () => {
     })
 }
 
+const updateLastSignIn = async (id: string) => {
+    await prisma.user.update({
+        where: { id: id },
+        data: { last_sign_in: new Date() },
+    })
+}
+
 export const UserModel = {
     create,
     selectUser,
     selectById,
+    selectProfile,
     updateAvatar,
-    getPublicIdAvatar,
-    destroyAvatar,
+    selectPublicIdAvatar,
+    deleteAvatar,
     addFollow,
     removeFollow,
-    allUser,
+    selectFollowing,
+    mutualFriendsCount,
+    updateLastSignIn,
+    selectAllUser,
 }

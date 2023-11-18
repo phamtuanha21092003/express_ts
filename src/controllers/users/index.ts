@@ -26,8 +26,10 @@ userController.delete(
     userService.removeFollow
 )
 
-userController.post('/all', async (req, res) => {
-    const user = await UserModel.allUser()
+userController.get('/general_friend', userService.generalFriend)
+
+userController.get('/all', async (req, res) => {
+    const user = await UserModel.selectAllUser()
 
     res.json({
         user: user,

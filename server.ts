@@ -57,5 +57,5 @@ app.use(
 
 const port = process.env.PORT || 8080
 server.listen(port, () => {
-    console.log(`App is listening on port ${port}!`)
+    console.log(`🚀 Server ready on port ${port}!`)
 })

@@ -11,13 +11,17 @@ datasource db {
 }
 
 model User {
-  id          String  @id @default(uuid())
-  email       String
-  name        String
-  password    String
-  avatar      Avatar?
-  followed_by User[]  @relation("UserFollows")
-  following   User[]  @relation("UserFollows")
+  id               String    @id @default(uuid())
+  email            String
+  name             String
+  password         String
+  avatar           Avatar?
+  followed_by      User[]    @relation("UserFollows")
+  following        User[]    @relation("UserFollows")
+  message_sended   Message[] @relation("MessageSended")
+  message_received Message[] @relation("MessageReceived")
+
+  last_sign_in DateTime @default(now())
 }
 
 model Avatar {
@@ -27,4 +31,16 @@ model Avatar {
   url       String
 
   @@id([user_id, public_id])
+}
+
+model Message {
+  id          String   @id @default(uuid())
+  sender_id   String
+  sender      User     @relation(fields: [sender_id], references: [id], name: "MessageSended")
+  receiver_id String
+  receiver    User     @relation(fields: [receiver_id], references: [id], name: "MessageReceived")
+  body        String
+  createdAt   DateTime @default(now())
+
+  @@index([sender_id, receiver_id])
 }
