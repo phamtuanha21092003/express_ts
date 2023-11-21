@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express'
 import { uploadImage, destroyImage } from '@services/image'
 import { UserModel } from '@models/User'
 import { matchedData, validationResult } from 'express-validator'
+import { redis } from '@utils/redis'
 
 const uploadAvatar = async (
     req: Request,
@@ -10,6 +11,8 @@ const uploadAvatar = async (
 ) => {
     try {
         const userId = res.locals.id
+
+        await redis.del(userId)
 
         const b64 = Buffer.from(req.file.buffer).toString('base64')
         let dataURI = 'data:' + req.file.mimetype + ';base64,' + b64
@@ -56,7 +59,7 @@ const destroyAvatar = async (
     }
 }
 
-const addFollow = (req: Request, res: Response, next: NextFunction) => {
+const addFollow = async (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req)
 
     if (!errors.isEmpty()) {
@@ -68,6 +71,7 @@ const addFollow = (req: Request, res: Response, next: NextFunction) => {
 
     try {
         UserModel.addFollow(currentId, targetId)
+        await redis.del(currentId)
 
         return res.status(201).json({ status: 'added successfully' })
     } catch (err) {
@@ -90,6 +94,7 @@ const removeFollow = async (
     const { id: currentId } = res.locals
 
     try {
+        await redis.del(currentId)
         UserModel.removeFollow(currentId, targetId)
 
         return res.status(200).json({ status: 'removed successfully' })
@@ -114,10 +119,65 @@ const generalFriend = async (
     }
 }
 
+const profile = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const id = res.locals['id']
+        const isExist = await redis.exists(id)
+
+        if (!isExist) {
+            const profile = await UserModel.selectProfile(id)
+
+            await redis.set(id, JSON.stringify(profile))
+
+            return res.status(200).json({ data: profile })
+        }
+
+        const data = JSON.parse(await redis.get(id))
+
+        res.status(200).json({ data: data })
+    } catch (err) {
+        next(err)
+    }
+}
+
+const addPostUser = async (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req)
+
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() })
+    }
+
+    try {
+        const id = res.locals.id
+
+        const { content } = matchedData(req)
+
+        const images: { url: string; public_id: string }[] = []
+
+        Object.keys(req.files).forEach(async (key) => {
+            const b64 = Buffer.from(req.files[key].buffer).toString('base64')
+            let dataURI = 'data:' + req.files[key].mimetype + ';base64,' + b64
+            const { public_id: publicId, secure_url: url } = await uploadImage(
+                dataURI
+            )
+
+            images.push({ url: url, public_id: publicId })
+        })
+
+        await UserModel.addPost(id, { content: content, images: images })
+
+        res.json({ status: 'successfully' })
+    } catch (err) {
+        next(err)
+    }
+}
+
 export const userService = {
     uploadAvatar,
     destroyAvatar,
     addFollow,
     removeFollow,
     generalFriend,
+    profile,
+    addPostUser,
 }

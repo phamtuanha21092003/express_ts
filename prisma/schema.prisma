@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,17 +8,37 @@ datasource db {
 }
 
 model User {
-  id               String    @id @default(uuid())
+  id               String     @id @default(uuid())
   email            String
   name             String
   password         String
   avatar           Avatar?
-  followed_by      User[]    @relation("UserFollows")
-  following        User[]    @relation("UserFollows")
-  message_sended   Message[] @relation("MessageSended")
-  message_received Message[] @relation("MessageReceived")
+  followed_by      User[]     @relation("UserFollows")
+  following        User[]     @relation("UserFollows")
+  message_sended   Message[]  @relation("MessageSended")
+  message_received Message[]  @relation("MessageReceived")
+  posts            UserPost[]
 
-  last_sign_in DateTime @default(now())
+  last_sign_in DateTime?
+}
+
+model UserPost {
+  id         Int         @id @default(autoincrement())
+  user_id    String
+  user       User        @relation(fields: [user_id], references: [id])
+  content    String
+  created_at DateTime    @default(now())
+  images     ImagePost[]
+}
+
+model ImagePost {
+  id        Int      @default(autoincrement())
+  post      UserPost @relation(fields: [post_id], references: [id])
+  post_id   Int
+  public_id String
+  url       String
+
+  @@id([id, post_id])
 }
 
 model Avatar {

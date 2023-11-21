@@ -12,4 +12,8 @@ const requireTargetIdBody = [
         }),
 ]
 
-export const validator = { requireTargetIdBody }
+const addPostUser = [
+    body('content').exists().withMessage('Content is required'),
+]
+
+export const validator = { requireTargetIdBody, addPostUser }

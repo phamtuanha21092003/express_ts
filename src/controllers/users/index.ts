@@ -35,3 +35,12 @@ userController.get('/all', async (req, res) => {
         user: user,
     })
 })
+
+userController.post(
+    '/upload_post',
+    uploadMiddleware.array('post_image', 4),
+    validator.addPostUser,
+    userService.addPostUser
+)
+
+userController.get('/profile', userService.profile)

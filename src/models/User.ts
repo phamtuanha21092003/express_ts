@@ -23,7 +23,25 @@ const selectById = (id: string) => {
 const selectProfile = (id: string) => {
     return prisma.user.findFirst({
         where: { id: id },
-        select: { name: true, avatar: { select: { url: true } } },
+        select: {
+            id: true,
+            name: true,
+            avatar: { select: { url: true } },
+            following: {
+                select: {
+                    id: true,
+                    name: true,
+                    avatar: { select: { url: true } },
+                },
+            },
+            followed_by: {
+                select: {
+                    id: true,
+                    name: true,
+                    avatar: { select: { url: true } },
+                },
+            },
+        },
     })
 }
 
@@ -119,6 +137,7 @@ const selectAllUser = () => {
             avatar: true,
             followed_by: { include: { avatar: true } },
             following: { include: { avatar: true } },
+            posts: { include: { images: true } },
         },
     })
 }
@@ -127,6 +146,35 @@ const updateLastSignIn = async (id: string) => {
     await prisma.user.update({
         where: { id: id },
         data: { last_sign_in: new Date() },
+    })
+}
+
+const signOut = async (id: string) => {
+    await prisma.user.update({
+        where: { id: id },
+        data: {
+            last_sign_in: undefined,
+        },
+    })
+}
+
+const addPost = async (
+    id: string,
+    {
+        content,
+        images,
+    }: { content: string; images: { url: string; public_id: string }[] }
+) => {
+    return prisma.user.update({
+        where: { id: id },
+        data: {
+            posts: {
+                create: {
+                    content: content,
+                    images: { createMany: { data: images } },
+                },
+            },
+        },
     })
 }
 
@@ -143,5 +191,7 @@ export const UserModel = {
     selectFollowing,
     mutualFriendsCount,
     updateLastSignIn,
+    signOut,
+    addPost,
     selectAllUser,
 }

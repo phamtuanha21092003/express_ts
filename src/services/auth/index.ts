@@ -1,8 +1,9 @@
 import { NextFunction, Request, Response } from 'express'
 import { matchedData, validationResult } from 'express-validator'
-import { accessTokenKey, refreshTokenKey } from '@configs'
+import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from '@configs'
 import jsonwebtoken, { JwtPayload } from 'jsonwebtoken'
 import { UserModel } from '@models/User'
+import { Forbidden, Unauthorized } from '@utils/error'
 
 const signUp = async (req: Request, res: Response) => {
     const errors = validationResult(req)
@@ -44,7 +45,7 @@ const signIn = async (req: Request, res: Response) => {
         const payloadAccessToken = { id: account.id }
         const accessToken = jsonwebtoken.sign(
             payloadAccessToken,
-            accessTokenKey,
+            ACCESS_TOKEN_KEY,
             {
                 expiresIn: '3h',
             }
@@ -53,7 +54,7 @@ const signIn = async (req: Request, res: Response) => {
         const payloadRefreshToken = { id: account.id }
         const refreshToken = jsonwebtoken.sign(
             payloadRefreshToken,
-            refreshTokenKey,
+            REFRESH_TOKEN_KEY,
             {
                 expiresIn: '0.5y',
             }
@@ -79,9 +80,9 @@ const verifyRefreshToken = (req: Request, res: Response) => {
     const { refresh: token } = matchedData(req)
     jsonwebtoken.verify(
         token,
-        refreshTokenKey,
+        REFRESH_TOKEN_KEY,
         async (err, decoded: JwtPayload) => {
-            if (err) return res.status(403).json({ message: err })
+            if (err) throw new Unauthorized('Token is not authorized')
 
             const { id } = decoded
 
@@ -93,13 +94,17 @@ const verifyRefreshToken = (req: Request, res: Response) => {
 
             UserModel.updateLastSignIn(id)
 
-            const accessToken = jsonwebtoken.sign({ decoded }, accessTokenKey, {
-                expiresIn: 30 * 60 * 1000,
-            })
+            const accessToken = jsonwebtoken.sign(
+                { decoded },
+                ACCESS_TOKEN_KEY,
+                {
+                    expiresIn: 30 * 60 * 1000,
+                }
+            )
 
             const refreshToken = jsonwebtoken.sign(
                 { decoded },
-                refreshTokenKey,
+                REFRESH_TOKEN_KEY,
                 {
                     expiresIn: 2 * 30 * 24 * 60 * 60 * 1000,
                 }
@@ -116,28 +121,23 @@ const verifyRefreshToken = (req: Request, res: Response) => {
 
 const verifyAccessToken = (req: Request, res: Response, next: NextFunction) => {
     if (!req.headers['authorization']) {
-        return res.status(401).json({
-            message: 'Unauthorized',
-        })
+        throw new Unauthorized('Unauthorized')
     }
 
     const [, token] = req.headers['authorization'].split(' ')
 
     jsonwebtoken.verify(
         token,
-        accessTokenKey,
+        ACCESS_TOKEN_KEY,
         async (err, decoded: JwtPayload) => {
-            if (err) return res.status(403).json({ message: err.message })
+            if (err) return next(new Unauthorized('Unauthorized'))
 
             const { id } = decoded
             res.locals.id = id
 
             const user = await UserModel.selectById(id)
 
-            if (!user)
-                return res.status(403).json({
-                    message: 'Unauthorized',
-                })
+            if (!user) throw new Forbidden('User not found')
         }
     )
 
