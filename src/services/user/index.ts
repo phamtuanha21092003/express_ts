@@ -152,19 +152,24 @@ const addPostUser = async (req: Request, res: Response, next: NextFunction) => {
 
         const { content } = matchedData(req)
 
-        const images: { url: string; public_id: string }[] = []
+        const images: { url: string; public_id: string }[] = await Promise.all(
+            Object.keys(req.files).map(async (key) => {
+                const b64 = Buffer.from(req.files[key].buffer).toString(
+                    'base64'
+                )
+                let dataURI =
+                    'data:' + req.files[key].mimetype + ';base64,' + b64
+                const { public_id: publicId, secure_url: url } =
+                    await uploadImage(dataURI)
 
-        Object.keys(req.files).forEach(async (key) => {
-            const b64 = Buffer.from(req.files[key].buffer).toString('base64')
-            let dataURI = 'data:' + req.files[key].mimetype + ';base64,' + b64
-            const { public_id: publicId, secure_url: url } = await uploadImage(
-                dataURI
-            )
+                return { url: url, public_id: publicId }
+            })
+        )
 
-            images.push({ url: url, public_id: publicId })
+        await UserModel.addPost(id, {
+            content: content,
+            images: images,
         })
-
-        await UserModel.addPost(id, { content: content, images: images })
 
         res.json({ status: 'successfully' })
     } catch (err) {
