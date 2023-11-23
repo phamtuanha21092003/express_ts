@@ -178,6 +178,31 @@ const addPost = async (
     })
 }
 
+const selectPost = (id: string): any => {
+    return prisma.user.findFirst({
+        where: { id: id },
+        select: {
+            posts: {
+                select: {
+                    content: true,
+                    created_at: true,
+                    images: { select: { url: true } },
+                },
+                orderBy: {
+                    created_at: 'desc',
+                },
+            },
+        },
+    })
+}
+
+const deletePost = (id: string, postId: number) => {
+    return prisma.user.update({
+        where: { id: id },
+        data: { posts: { delete: { id: postId } } },
+    })
+}
+
 export const UserModel = {
     create,
     selectUser,
@@ -192,6 +217,8 @@ export const UserModel = {
     mutualFriendsCount,
     updateLastSignIn,
     signOut,
-    addPost,
     selectAllUser,
+    addPost,
+    selectPost,
+    deletePost,
 }

@@ -43,4 +43,6 @@ userController.post(
     userService.addPostUser
 )
 
+userController.get('/get_post', userService.getPost)
+
 userController.get('/profile', userService.profile)

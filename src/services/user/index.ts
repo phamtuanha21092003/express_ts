@@ -177,6 +177,18 @@ const addPostUser = async (req: Request, res: Response, next: NextFunction) => {
     }
 }
 
+const getPost = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = res.locals['id']
+
+        const { posts } = await UserModel.selectPost(userId)
+
+        res.status(200).json({ data: posts })
+    } catch (err) {
+        next(err)
+    }
+}
+
 export const userService = {
     uploadAvatar,
     destroyAvatar,
@@ -185,4 +197,5 @@ export const userService = {
     generalFriend,
     profile,
     addPostUser,
+    getPost,
 }
