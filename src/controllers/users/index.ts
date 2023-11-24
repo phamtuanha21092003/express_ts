@@ -45,4 +45,6 @@ userController.post(
 
 userController.get('/get_post', userService.getPost)
 
+userController.delete('/remove_post', userService.removePost)
+
 userController.get('/profile', userService.profile)

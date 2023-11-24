@@ -196,13 +196,6 @@ const selectPost = (id: string): any => {
     })
 }
 
-const deletePost = (id: string, postId: number) => {
-    return prisma.user.update({
-        where: { id: id },
-        data: { posts: { delete: { id: postId } } },
-    })
-}
-
 export const UserModel = {
     create,
     selectUser,
@@ -220,5 +213,4 @@ export const UserModel = {
     selectAllUser,
     addPost,
     selectPost,
-    deletePost,
 }

@@ -33,7 +33,7 @@ model UserPost {
 
 model ImagePost {
   id        Int      @default(autoincrement())
-  post      UserPost @relation(fields: [post_id], references: [id])
+  post      UserPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
   post_id   Int
   public_id String
   url       String

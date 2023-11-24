@@ -3,6 +3,7 @@ import { uploadImage, destroyImage } from '@services/image'
 import { UserModel } from '@models/User'
 import { matchedData, validationResult } from 'express-validator'
 import { redis } from '@utils/redis'
+import { PostModel } from '@models/Post'
 
 const uploadAvatar = async (
     req: Request,
@@ -189,6 +190,30 @@ const getPost = async (req: Request, res: Response, next: NextFunction) => {
     }
 }
 
+const removePost = async (req: Request, res: Response, next: NextFunction) => {
+    const userId = res.locals['id']
+
+    const postId = req.body['post_id']
+
+    try {
+        console.log(postId, typeof postId, userId)
+
+        const { images } = await PostModel.selectAllPublicId(userId, postId)
+
+        await Promise.all(
+            images.map(async ({ public_id }) => {
+                await destroyImage(public_id)
+            })
+        )
+
+        await PostModel.deletePost(userId, postId)
+
+        res.status(200).json({ status: 'remove successfully' })
+    } catch (err) {
+        next(err)
+    }
+}
+
 export const userService = {
     uploadAvatar,
     destroyAvatar,
@@ -198,4 +223,5 @@ export const userService = {
     profile,
     addPostUser,
     getPost,
+    removePost,
 }
