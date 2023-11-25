@@ -70,7 +70,11 @@ const signIn = async (req: Request, res: Response) => {
     res.status(400).json({ message: 'email, password are invalid' })
 }
 
-const verifyRefreshToken = (req: Request, res: Response) => {
+const verifyRefreshToken = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
     const errors = validationResult(req)
 
     if (!errors.isEmpty()) {
@@ -82,7 +86,7 @@ const verifyRefreshToken = (req: Request, res: Response) => {
         token,
         REFRESH_TOKEN_KEY,
         async (err, decoded: JwtPayload) => {
-            if (err) throw new Unauthorized('Token is not authorized')
+            if (err) return next(new Unauthorized('Unauthorized'))
 
             const { id } = decoded
 
