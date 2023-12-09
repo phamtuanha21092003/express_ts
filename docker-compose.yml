@@ -36,6 +36,7 @@ services:
             - /app/node_modules/
         depends_on:
             - postgres
+            - redis
         ports:
             - 8080:8080
 
