@@ -1,19 +1,43 @@
-version: '3.8'
+version: "3.8"
 services:
     postgres:
-        image: postgres
+        image: postgres:16.1-alpine3.18
         restart: always
         environment:
             - POSTGRES_USER=postgres
             - POSTGRES_PASSWORD=123456
         volumes:
             - postgres:/var/lib/postgresql/data
+        expose:
+            - 5432
+
+    redis:
+        image: redis:7.2.3-alpine3.19
+        expose:
+            - 6379
+        environment:
+            - REDIS_PASSWORD=123456
+            - REDIS_PORT=6379
+
+    express:
+        image: backend_nodejs
+        env_file:
+            - .env
+        build:
+            context: .
+            dockerfile_inline: |
+                FROM node:20.10.0-alpine3.18
+                WORKDIR /app
+                COPY  package*.json  .
+                RUN npm install
+        command: ["/bin/sh", "-c", "npm start --port 8080"]
+        volumes:
+            - ./:/app
+            - /app/node_modules/
+        depends_on:
+            - postgres
         ports:
-            - '3306:5432'
-    # express:
-    #   image: nodejs:20.9.0
-    #   command: bash -c "npm install && npm start"
-    #   depends_on:
-    #     - postgres
+            - 8080:8080
+
 volumes:
     postgres:
